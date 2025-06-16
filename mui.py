@@ -19,8 +19,8 @@ def is_prompt_valid(prompt: str) -> bool:
 
 
 # --- Streamlit UI Setup ---
-st.set_page_config("🧪 AI Automation Assistant", layout="wide")
-st.title("🤖 AI Test Automation Assistant")
+st.set_page_config(" AI Automation Assistant", layout="wide")
+st.title(" AI Test Automation Assistant")
 st.markdown("Automate web testing with **Gemini 2.0**, **Playwright**, and **Streamlit**.")
 
 # Sidebar for Inputs
@@ -28,8 +28,8 @@ with st.sidebar:
     st.header("📝 Test Configuration")
     prompt = st.text_area("Enter your test prompt", height=150, placeholder="e.g., Test the login form on example.com")
     url = st.text_input("Page URL for DOM scraping", placeholder="https://example.com")
-    run_button = st.button("🧠 Generate Automation Script")
-    scrape_button = st.button("🔍 Scrape DOM")
+    run_button = st.button(" Generate Automation Script")
+    scrape_button = st.button("Scrape DOM")
 
 # Guardrail
 if prompt and not is_prompt_valid(prompt):
@@ -41,7 +41,7 @@ col1, col2 = st.columns([1.5, 1])
 
 # ---- Code Generation ----
 with col1:
-    st.subheader("🧠 Generated Automation Code")
+    st.subheader(" Generated Automation Code")
     if run_button:
         with st.spinner("Generating code using Gemini..."):
             code = asyncio.run(query_gemini(prompt, "You are an expert automation assistant using Playwright."))
@@ -51,17 +51,17 @@ with col1:
 
 # ---- Run and Save Actions ----
 with col2:
-    st.subheader("🚀 Run & Manage Script")
+    st.subheader("Run & Manage Script")
     
-    if st.button("▶️ Run Script"):
+    if st.button("Run Script"):
         with st.spinner("Executing script..."):
             output = run_code(edited_code)
             st.success("Script executed.")
             st.text_area("📋 Execution Output:", value=output, height=200)
 
-    st.markdown("### 💾 Save Script")
-    filename = st.text_input("Save as:", value="test_script.py")
-    if st.button("💾 Save"):
+    st.markdown("Save Script")
+    filename = st.text_input("Save as:", value="framework_output")
+    if st.button("Save"):
         os.makedirs("generated", exist_ok=True)
         with open(f"generated/{filename}", "w") as f:
             f.write(edited_code)
@@ -69,7 +69,7 @@ with col2:
 
 # ---- DOM Scraping Results ----
 if scrape_button and url:
-    with st.expander("🕷️ DOM Scraping Output"):
+    with st.expander("DOM Scraping Output"):
         with st.spinner("Scraping DOM..."):
             selectors = asyncio.run(scrape_dom(url))
             st.code(selectors, language="text")
@@ -78,8 +78,8 @@ else:
         st.warning("Please enter a valid URL to scrape.")
 
 # ---- Test Report Section ----
-with st.expander("📊 Test Report Generator"):
-    if st.button("📝 Generate Report"):
+with st.expander("Test Report Generator"):
+    if st.button("Generate Report"):
         os.makedirs("reports", exist_ok=True)
         with open("reports/latest_report.txt", "w") as f:
             f.write(f"Test Prompt: {prompt}\n\nGenerated Code:\n{edited_code}\n\nResult:\n{run_code(edited_code)}")
@@ -87,8 +87,8 @@ with st.expander("📊 Test Report Generator"):
     if os.path.exists("reports/latest_report.txt"):
         with open("reports/latest_report.txt", "r") as f:
             report = f.read()
-            st.text_area("📄 Latest Report:", value=report, height=250)
+            st.text_area("Latest Report:", value=report, height=250)
 
 # Footer
 st.markdown("---")
-st.caption("Built with ❤️ by Navaneeth — powered by Gemini 2.0, Playwright, and Streamlit.")
+#st.caption("Powered by Gemini 2.0, Playwright, and Streamlit.")
