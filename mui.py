@@ -1,94 +1,77 @@
 import streamlit as st
 import asyncio
 import os
+from datetime import datetime
 
-# Dummy placeholders (replace with actual implementations later)
-async def query_gemini(user_prompt: str, system_prompt: str) -> str:
-    await asyncio.sleep(1)
-    return f"# AI-generated test script for: {user_prompt}\nprint('Test started...')"
-
-async def scrape_dom(url: str) -> str:
+# Dummy placeholders (replace with actual implementations)
+async def scrape_dom(prompt: str) -> str:
     await asyncio.sleep(1)
     return "//button[1], //input[@id='username']"
 
+async def query_gemini(prompt: str, dom_data: str) -> str:
+    await asyncio.sleep(1)
+    return f"# Playwright script based on: {prompt}\nprint('Running test steps...')\n# Using DOM: {dom_data}"
+
 def run_code(code: str) -> str:
-    return "✅ Script executed successfully.\nLogs:\n- Clicked login\n- Entered username"
+    return "Script executed.\nLog: Login button clicked.\nUsername entered."
 
-def is_prompt_valid(prompt: str) -> bool:
-    return any(keyword in prompt.lower() for keyword in ["click", "login", "test", "form", "submit", "automation"])
+def generate_allure_report(prompt: str, code: str, execution_output: str) -> str:
+    report_content = f"""ALLURE REPORT
 
+Prompt:
+{prompt}
 
-# --- Streamlit UI Setup ---
-st.set_page_config(" AI Automation Assistant", layout="wide")
-st.title(" AI Test Automation Assistant")
-st.markdown("Automate web testing with **Gemini 2.0**, **Playwright**, and **Streamlit**.")
+Generated Code:
+{code}
 
-# Sidebar for Inputs
-with st.sidebar:
-    st.header("📝 Test Configuration")
-    prompt = st.text_area("Enter your test prompt", height=150, placeholder="e.g., Test the login form on example.com")
-    url = st.text_input("Page URL for DOM scraping", placeholder="https://example.com")
-    run_button = st.button(" Generate Automation Script")
-    scrape_button = st.button("Scrape DOM")
+Execution Output:
+{execution_output}
+"""
+    return report_content
 
-# Guardrail
-if prompt and not is_prompt_valid(prompt):
-    st.warning("⚠️ Prompt doesn't seem automation-related. Please refine it.")
-    st.stop()
+# UI
+st.set_page_config("AI Automation Assistant", layout="wide")
+st.title("AI Test Automation Assistant")
+st.markdown("Automate web testing using AI and Playwright.")
 
-# Layout Columns for Main Content
-col1, col2 = st.columns([1.5, 1])
+# Input prompt
+prompt = st.text_area("Enter your test prompt", height=150, placeholder="e.g., Test the login form on example.com")
 
-# ---- Code Generation ----
-with col1:
-    st.subheader(" Generated Automation Code")
-    if run_button:
-        with st.spinner("Generating code using Gemini..."):
-            code = asyncio.run(query_gemini(prompt, "You are an expert automation assistant using Playwright."))
-            st.session_state.generated_code = code
-    code = st.session_state.get("generated_code", "# Generated code will appear here...")
-    edited_code = st.text_area("✏️ Edit or review the code:", value=code, height=300, key="editable_code")
+# Execute button
+if st.button("Execute"):
+    if not prompt.strip():
+        st.warning("Please enter a test prompt.")
+        st.stop()
 
-# ---- Run and Save Actions ----
-with col2:
-    st.subheader("Run & Manage Script")
-    
-    if st.button("Run Script"):
-        with st.spinner("Executing script..."):
-            output = run_code(edited_code)
-            st.success("Script executed.")
-            st.text_area("📋 Execution Output:", value=output, height=200)
+    with st.spinner("Scraping DOM, generating code, executing..."):
+        output_dir = "automation_output"
+        os.makedirs(output_dir, exist_ok=True)
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        session_dir = os.path.join(output_dir, f"session_{timestamp}")
+        os.makedirs(session_dir)
 
-    st.markdown("Save Script")
-    filename = st.text_input("Save as:", value="framework_output")
-    if st.button("Save"):
-        os.makedirs("generated", exist_ok=True)
-        with open(f"generated/{filename}", "w") as f:
-            f.write(edited_code)
-        st.success(f"Saved to generated/{filename}")
+        # Step 1: DOM Scraping
+        dom_data = asyncio.run(scrape_dom(prompt))
+        with open(os.path.join(session_dir, "dom_selectors.txt"), "w") as f:
+            f.write(dom_data)
 
-# ---- DOM Scraping Results ----
-if scrape_button and url:
-    with st.expander("DOM Scraping Output"):
-        with st.spinner("Scraping DOM..."):
-            selectors = asyncio.run(scrape_dom(url))
-            st.code(selectors, language="text")
-else:
-    if scrape_button:
-        st.warning("Please enter a valid URL to scrape.")
+        # Step 2: AI-generated Playwright Code
+        code = asyncio.run(query_gemini(prompt, dom_data))
+        with open(os.path.join(session_dir, "test_script.py"), "w") as f:
+            f.write(code)
 
-# ---- Test Report Section ----
-with st.expander("Test Report Generator"):
-    if st.button("Generate Report"):
-        os.makedirs("reports", exist_ok=True)
-        with open("reports/latest_report.txt", "w") as f:
-            f.write(f"Test Prompt: {prompt}\n\nGenerated Code:\n{edited_code}\n\nResult:\n{run_code(edited_code)}")
-        st.success("Report saved to reports/latest_report.txt")
-    if os.path.exists("reports/latest_report.txt"):
-        with open("reports/latest_report.txt", "r") as f:
-            report = f.read()
-            st.text_area("Latest Report:", value=report, height=250)
+        # Step 3: Run Code (simulated)
+        execution_output = run_code(code)
 
-# Footer
-st.markdown("---")
-#st.caption("Powered by Gemini 2.0, Playwright, and Streamlit.")
+        # Step 4: Allure Report
+        allure_report = generate_allure_report(prompt, code, execution_output)
+        with open(os.path.join(session_dir, "allure_report.txt"), "w") as f:
+            f.write(allure_report)
+
+    st.success("Execution complete. Files saved.")
+    with st.expander("Generated Playwright Code"):
+        st.code(code, language="python")
+    with st.expander("Execution Log"):
+        st.text(execution_output)
+    with st.expander("Allure Report"):
+        st.text(allure_report)
