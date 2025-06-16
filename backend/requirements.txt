@@ -1,0 +1,13 @@
+# === requirements.txt ===
+pydantic
+playwright
+anthropic
+google-generativeai
+python-dotenv
+langchain-anthropic>=0.1.4
+langchain-google-genai
+# google-cloud-aiplatform
+google.genai
+beautifulsoup4
+openai
+black  # for code formatting
