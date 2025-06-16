@@ -1,77 +1,96 @@
 import streamlit as st
 import asyncio
 import os
+import uuid
 from datetime import datetime
 
-# Dummy placeholders (replace with actual implementations)
+# Dummy placeholders – replace with real implementations
+async def query_gemini(user_prompt: str, dom_data: str) -> str:
+    await asyncio.sleep(1)
+    return f"# AI-generated test script for: {user_prompt}\n# Using DOM: {dom_data}\nprint('Executing automation...')"
+
 async def scrape_dom(prompt: str) -> str:
     await asyncio.sleep(1)
-    return "//button[1], //input[@id='username']"
-
-async def query_gemini(prompt: str, dom_data: str) -> str:
-    await asyncio.sleep(1)
-    return f"# Playwright script based on: {prompt}\nprint('Running test steps...')\n# Using DOM: {dom_data}"
+    return "//button[1]\n//input[@id='username']\n//input[@id='password']"
 
 def run_code(code: str) -> str:
-    return "Script executed.\nLog: Login button clicked.\nUsername entered."
+    return "✅ Executed successfully.\nLog:\n- Clicked button\n- Entered username\n- Entered password"
 
-def generate_allure_report(prompt: str, code: str, execution_output: str) -> str:
-    report_content = f"""ALLURE REPORT
+def generate_allure_report(output_dir: str):
+    report_path = os.path.join(output_dir, "allure_report.html")
+    with open(report_path, "w") as f:
+        f.write("<html><body><h1>Allure Report Placeholder</h1></body></html>")
 
-Prompt:
-{prompt}
+def is_prompt_valid(prompt: str) -> bool:
+    return any(keyword in prompt.lower() for keyword in ["click", "login", "test", "form", "submit", "automation", "visit", "navigate", "example.com"])
 
-Generated Code:
-{code}
-
-Execution Output:
-{execution_output}
-"""
-    return report_content
-
-# UI
+# --- Streamlit UI ---
 st.set_page_config("AI Automation Assistant", layout="wide")
 st.title("AI Test Automation Assistant")
-st.markdown("Automate web testing using AI and Playwright.")
+st.markdown("Automate web testing with Gemini, Playwright & Allure. Just enter a prompt:")
 
-# Input prompt
-prompt = st.text_area("Enter your test prompt", height=150, placeholder="e.g., Test the login form on example.com")
+# Prompt Input
+prompt = st.text_area("Test Prompt", height=150, placeholder="e.g., Test the login on https://example.com")
+execute = st.button("Execute")
 
-# Execute button
-if st.button("Execute"):
-    if not prompt.strip():
-        st.warning("Please enter a test prompt.")
-        st.stop()
+# Validate prompt
+if prompt and not is_prompt_valid(prompt):
+    st.warning("⚠️ Prompt doesn't seem automation-related. Please refine it.")
+    st.stop()
 
-    with st.spinner("Scraping DOM, generating code, executing..."):
-        output_dir = "automation_output"
-        os.makedirs(output_dir, exist_ok=True)
+# --- Execution Block ---
+if execute and prompt:
+    with st.spinner("Running full automation pipeline..."):
+
+        # Create unique session directory
+        session_id = str(uuid.uuid4())[:8]
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        session_dir = os.path.join(output_dir, f"session_{timestamp}")
-        os.makedirs(session_dir)
+        session_dir = os.path.join("automation_output", f"{timestamp}_{session_id}")
+        os.makedirs(session_dir, exist_ok=True)
 
-        # Step 1: DOM Scraping
+        # Step 1: Scrape DOM
         dom_data = asyncio.run(scrape_dom(prompt))
-        with open(os.path.join(session_dir, "dom_selectors.txt"), "w") as f:
+        dom_file = os.path.join(session_dir, "dom_selectors.txt")
+        with open(dom_file, "w") as f:
             f.write(dom_data)
 
-        # Step 2: AI-generated Playwright Code
+        # Show DOM
+        with st.expander("Scraped DOM Elements"):
+            st.code(dom_data, language="text")
+
+        # Step 2: Generate code using Gemini
         code = asyncio.run(query_gemini(prompt, dom_data))
-        with open(os.path.join(session_dir, "test_script.py"), "w") as f:
+        code_file = os.path.join(session_dir, "test_script.py")
+        with open(code_file, "w") as f:
             f.write(code)
 
-        # Step 3: Run Code (simulated)
-        execution_output = run_code(code)
+        # Step 3: Run the code (mocked)
+        result = run_code(code)
 
-        # Step 4: Allure Report
-        allure_report = generate_allure_report(prompt, code, execution_output)
-        with open(os.path.join(session_dir, "allure_report.txt"), "w") as f:
-            f.write(allure_report)
+        # Step 4: Generate report
+        report_path = os.path.join(session_dir, "report.txt")
+        with open(report_path, "w") as f:
+            f.write(f"Prompt:\n{prompt}\n\nGenerated Code:\n{code}\n\nExecution Result:\n{result}")
 
-    st.success("Execution complete. Files saved.")
-    with st.expander("Generated Playwright Code"):
-        st.code(code, language="python")
-    with st.expander("Execution Log"):
-        st.text(execution_output)
-    with st.expander("Allure Report"):
-        st.text(allure_report)
+        # Step 5: Allure Report (mock)
+        generate_allure_report(session_dir)
+
+    # Display Results
+    st.success("✅ Automation completed.")
+
+    st.subheader("Generated Code")
+    st.code(code, language="python")
+
+    st.subheader("Execution Log")
+    st.text(result)
+
+    st.subheader("Report")
+    with open(report_path) as f:
+        st.text(f.read())
+
+    st.subheader("Allure Report (HTML)")
+    st.markdown(f"[📄 Open Allure Report]({session_dir}/allure_report.html)", unsafe_allow_html=True)
+
+# Footer
+st.markdown("---")
+# st.caption("Powered by Playwright, Gemini, and Allure")
